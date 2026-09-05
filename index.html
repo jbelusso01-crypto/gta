@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Cidade Aberta</title>
+<style>
+  :root{
+    --gold:#ffd23f; --green:#7be26b; --blue:#4aa3ff; --red:#e0553d;
+    --shadow:2px 2px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000;
+  }
+  html,body{margin:0;height:100%;overflow:hidden;background:#000;color:#fff;
+    font-family:"Arial Narrow","Roboto Condensed",Impact,Haettenschweiler,sans-serif;
+    -webkit-font-smoothing:antialiased;user-select:none}
+  canvas{display:block}
+  #hud{position:fixed;inset:0;pointer-events:none;z-index:5}
+
+  /* ---- canto superior direito: grana, estrelas, barras ---- */
+  #topright{position:absolute;top:14px;right:20px;text-align:right}
+  #money{font-size:38px;font-weight:900;color:var(--green);text-shadow:var(--shadow);letter-spacing:1px;line-height:1}
+  #stars{font-size:26px;letter-spacing:2px;margin-top:4px;transition:transform .1s}
+  #stars .on{color:var(--gold);text-shadow:var(--shadow)}
+  #stars .off{color:rgba(255,255,255,.16)}
+  .bar{width:170px;height:13px;background:rgba(0,0,0,.55);border:2px solid #000;margin:5px 0 0 auto;overflow:hidden}
+  .bar>div{height:100%;transition:width .18s}
+  #hp{background:var(--red);width:100%}
+  #armor{background:var(--blue);width:0}
+  #carhp{background:var(--blue);width:100%}
+  #carwrap{display:none}
+  #clock{font-size:20px;color:#fff;text-shadow:var(--shadow);margin-top:6px;opacity:.9}
+
+  /* ---- arma ---- */
+  #weaponbox{position:absolute;top:14px;right:210px;text-align:right}
+  #weapon{font-size:26px;font-weight:900;color:#fff;text-shadow:var(--shadow)}
+  #ammo{font-size:22px;color:var(--gold);text-shadow:var(--shadow)}
+
+  /* ---- radar ---- */
+  #radarwrap{position:absolute;left:18px;bottom:18px;width:200px;height:200px}
+  #radar{width:200px;height:200px;border-radius:50%;
+    box-shadow:0 0 0 3px #000, 0 0 0 5px rgba(255,255,255,.28), 0 4px 18px rgba(0,0,0,.6)}
+  #zone{position:absolute;left:228px;bottom:26px;font-size:24px;font-weight:700;
+    color:var(--gold);text-shadow:var(--shadow)}
+  #mission{position:absolute;left:228px;bottom:58px;font-size:20px;color:#fff;text-shadow:var(--shadow)}
+
+  /* ---- velocimetro ---- */
+  #speedwrap{position:absolute;bottom:24px;right:24px;text-align:right;display:none}
+  #speed{font-size:52px;font-weight:900;text-shadow:var(--shadow);line-height:.9}
+  #speedwrap small{font-size:16px;opacity:.8}
+
+  #hint{position:absolute;bottom:22px;left:50%;transform:translateX(-50%);font-size:17px;
+    background:rgba(0,0,0,.5);padding:6px 16px;border-radius:3px;white-space:nowrap;letter-spacing:.5px}
+  #toast{position:absolute;top:22%;left:50%;transform:translateX(-50%);font-size:26px;font-weight:700;
+    color:#fff;text-shadow:var(--shadow);opacity:0;transition:opacity .25s;text-align:center}
+  #big{position:absolute;top:32%;left:50%;transform:translateX(-50%);font-size:56px;font-weight:900;
+    color:var(--gold);text-shadow:3px 3px 0 #000;opacity:0;transition:opacity .3s;text-align:center;letter-spacing:2px}
+  #cross{position:absolute;left:50%;top:50%;width:26px;height:26px;margin:-13px 0 0 -13px;display:none}
+  #cross:before,#cross:after{content:"";position:absolute;background:rgba(255,255,255,.85);box-shadow:0 0 2px #000}
+  #cross:before{left:12px;top:0;width:2px;height:26px}
+  #cross:after{top:12px;left:0;height:2px;width:26px}
+  #dmg{position:absolute;inset:0;opacity:0;transition:opacity .2s;pointer-events:none;
+    background:radial-gradient(ellipse at center, rgba(255,0,0,0) 40%, rgba(190,10,10,.75) 100%)}
+  #fps{position:absolute;top:8px;left:10px;font-size:13px;color:rgba(255,255,255,.45)}
+
+  /* ---- overlays ---- */
+  .overlay{position:fixed;inset:0;z-index:20;display:none;align-items:center;justify-content:center;
+    flex-direction:column;background:rgba(0,0,0,.82);text-align:center}
+  #intro{display:flex;cursor:pointer}
+  #intro h1{font-size:72px;margin:0;letter-spacing:3px;color:var(--gold);text-shadow:5px 5px 0 #000}
+  #intro h2{font-size:20px;margin:2px 0 18px;color:#bbb;font-weight:400;letter-spacing:6px}
+  .cols{display:flex;gap:44px;flex-wrap:wrap;justify-content:center;max-width:900px;margin-bottom:10px}
+  .cols div{text-align:left;font-size:16px;line-height:1.7;color:#ddd}
+  .cols b{color:var(--gold);display:inline-block;min-width:112px}
+  .go{margin-top:20px;font-size:22px;color:var(--green);animation:pulse 1.4s infinite}
+  @keyframes pulse{50%{opacity:.45}}
+  #pause h1,#bigmap h1{font-size:48px;color:var(--gold);text-shadow:4px 4px 0 #000;margin:0 0 12px}
+  #pausestats{font-size:18px;line-height:1.8;color:#ddd;margin-bottom:18px}
+  button{font-family:inherit;font-size:20px;padding:10px 30px;background:var(--gold);border:none;
+    color:#111;font-weight:900;cursor:pointer;letter-spacing:1px}
+  button:hover{background:#fff}
+  #bigmapcv{width:min(78vh,78vw);height:min(78vh,78vw);border:3px solid #000;box-shadow:0 0 0 2px rgba(255,255,255,.25)}
+  #maplegend{margin-top:10px;font-size:15px;color:#ccc}
+  #maplegend span{margin:0 9px}
+
+  /* ---- loja ---- */
+  #shop{background:rgba(0,0,0,.9)}
+  #shopbox{background:#14161c;border:3px solid var(--gold);padding:22px 26px;min-width:420px}
+  #shoptitle{font-size:30px;color:var(--gold);text-align:center;margin-bottom:14px;letter-spacing:2px}
+  .shopitem{display:flex;justify-content:space-between;gap:30px;font-size:19px;padding:8px 12px;
+    cursor:pointer;border-left:4px solid transparent}
+  .shopitem:hover,.shopitem.sel{background:rgba(255,210,63,.14);border-left-color:var(--gold)}
+  .shopitem.poor{color:#777}
+  .shophint{margin-top:14px;font-size:14px;color:#888;text-align:center}
+</style>
+</head>
+<body>
+
+<div id="hud">
+  <div id="fps"></div>
+  <div id="topright">
+    <div id="money">R$ 0</div>
+    <div id="stars"></div>
+    <div class="bar"><div id="hp"></div></div>
+    <div class="bar" id="armorwrap"><div id="armor"></div></div>
+    <div class="bar" id="carwrap"><div id="carhp"></div></div>
+    <div id="clock">09:30</div>
+  </div>
+  <div id="weaponbox">
+    <div id="weapon">Punhos</div>
+    <div id="ammo"></div>
+  </div>
+  <div id="radarwrap"><canvas id="radar" width="200" height="200"></canvas></div>
+  <div id="zone">Centro</div>
+  <div id="mission"></div>
+  <div id="speedwrap"><span id="speed">0</span><small> km/h</small></div>
+  <div id="hint"></div>
+  <div id="toast"></div>
+  <div id="big"></div>
+  <div id="cross"></div>
+  <div id="dmg"></div>
+</div>
+
+<div id="intro" class="overlay">
+  <h1>CIDADE ABERTA</h1>
+  <h2>MUNDO ABERTO</h2>
+  <div class="cols">
+    <div>
+      <b>W A S D</b> andar / dirigir<br>
+      <b>Mouse</b> girar a camera<br>
+      <b>Bot. esquerdo</b> atacar / atirar<br>
+      <b>Bot. direito</b> mirar<br>
+      <b>Shift</b> correr<br>
+      <b>Espaco</b> pular / freio de mao
+    </div>
+    <div>
+      <b>E</b> entrar / sair do veiculo<br>
+      <b>F</b> interagir, lojas e trabalhos<br>
+      <b>R</b> recarregar<br>
+      <b>1-7 / Q / roda</b> trocar de arma<br>
+      <b>Tab ou M</b> mapa da cidade<br>
+      <b>H</b> buzina &bull; <b>N</b> som &bull; <b>Esc</b> pausa
+    </div>
+  </div>
+  <p style="color:#999;max-width:640px;font-size:15px">
+    Marcador amarelo = entrega. Azul = trabalho ativo. Laranja = casa de armas,
+    verde = oficina, rosa = lanchonete, vermelho = hospital.
+    Cada estrela traz mais policia atras de voce.
+  </p>
+  <p class="go">CLIQUE PARA COMECAR</p>
+</div>
+
+<div id="pause" class="overlay">
+  <h1>PAUSADO</h1>
+  <div id="pausestats"></div>
+  <button id="resume">CONTINUAR</button>
+  <p style="color:#888;font-size:15px;margin-top:18px">F5 salva &bull; F9 carrega &bull; Esc volta ao jogo</p>
+</div>
+
+<div id="bigmap" class="overlay">
+  <h1>CIDADE</h1>
+  <canvas id="bigmapcv" width="720" height="720"></canvas>
+  <div id="maplegend">
+    <span style="color:#7be26b">&#9679; voce</span>
+    <span style="color:#ffd23f">&#9679; entrega</span>
+    <span style="color:#ff8c3a">&#9679; armas</span>
+    <span style="color:#38d68a">&#9679; oficina</span>
+    <span style="color:#ff5c8a">&#9679; comida</span>
+    <span style="color:#ff4d4d">&#9679; hospital</span>
+    <span style="color:#4aa3ff">&#9679; policia</span>
+  </div>
+</div>
+
+<div id="shop" class="overlay">
+  <div id="shopbox">
+    <div id="shoptitle"></div>
+    <div id="shoplist"></div>
+  </div>
+</div>
+
+<script src="vendor/three.min.js"></script>
+<script src="src/core.js"></script>
+<script src="src/textures.js"></script>
+<script src="src/models.js"></script>
+<script src="src/city.js"></script>
+<script src="src/audio.js"></script>
+<script src="src/weapons.js"></script>
+<script src="src/peds.js"></script>
+<script src="src/vehicles.js"></script>
+<script src="src/world.js"></script>
+<script src="src/player.js"></script>
+<script src="src/police.js"></script>
+<script src="src/missions.js"></script>
+<script src="src/hud.js"></script>
+<script src="src/game.js"></script>
+</body>
+</html>
