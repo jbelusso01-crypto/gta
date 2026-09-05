@@ -272,6 +272,13 @@ G.hud = {
       g.fillStyle = '#79c4ff';
       g.beginPath(); g.arc(c.x, c.z, 10, 0, 7); g.fill();
     }
+    /* helicoptero */
+    const hl = G.police.heli;
+    if (hl && hl.active) {
+      g.fillStyle = '#8ad4ff';
+      g.beginPath(); g.arc(hl.x, hl.z, 22, 0, 7); g.fill();
+      g.strokeStyle = '#0a2740'; g.lineWidth = 5; g.stroke();
+    }
     /* objetivos */
     const mkList = [[G.mission.mk, '#ffd23f'], [G.mission.mk2, '#4aa3ff']];
     for (const [mk, col] of mkList) {

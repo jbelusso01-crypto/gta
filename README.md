@@ -65,8 +65,16 @@ python3 -m http.server 8000
 
 **Policia**
 - Seis estrelas de procurado, viaturas que perseguem e fecham o carro,
-  policiais que descem do carro e atiram, prisao quando te encurralam,
-  fianca na delegacia e repintura na oficina para despistar.
+  policiais que descem do carro, rendem voce ate 2 estrelas e abrem fogo a
+  partir de 3, prisao quando te encurralam, fianca na delegacia e repintura
+  na oficina para despistar.
+- Helicoptero da policia a partir de 4 estrelas: persegue, atira, acende o
+  holofote a noite e pode ser abatido a tiros (cai girando e explode).
+
+**Praia e mar**
+- Da para entrar na agua e nadar; ir longe demais afoga.
+- Veiculo que cai no mar afunda e voce sai nadando.
+- Pier de madeira sobre o mar, quiosques, guarda-sois e palmeiras.
 
 **Economia e trabalhos**
 - Entregas (sempre ativas), corridas de taxi, modo justiceiro na viatura,

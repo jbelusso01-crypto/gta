@@ -161,6 +161,13 @@ G.rayHit = function (ox, oy, oz, dx, dy, dz, maxD, ignore) {
         return { type: 'ped', obj: p, x: px, y: py, z: pz, dist: t, head: py > p.y + 1.5 };
       }
     }
+    const hl = G.police.heli;
+    if (hl && hl.active && hl.dead <= 0) {
+      const hx = px - hl.x, hy = py - (hl.y + 1.2), hz = pz - hl.z;
+      if (hx * hx + hy * hy + hz * hz < 12) {
+        return { type: 'heli', obj: hl, x: px, y: py, z: pz, dist: t };
+      }
+    }
     for (const v of G.vehicles.list) {
       if (v === ignore || !v.active) continue;
       if (Math.abs(px - v.x) + Math.abs(pz - v.z) > 6) continue;
@@ -216,6 +223,9 @@ G.Combat = {
       } else if (hit.type === 'vehicle') {
         G.vehicles.damage(hit.obj, W.dmg * 0.55, shooter);
         G.FX.impact(hit.x, hit.y, hit.z);
+      } else if (hit.type === 'heli') {
+        G.police.damageHeli(W.dmg * 0.8);
+        G.FX.impact(hit.x, hit.y, hit.z);
       } else {
         G.FX.impact(hit.x, hit.y, hit.z);
       }
@@ -268,6 +278,11 @@ G.Combat = {
       if (!v.active) continue;
       const d = G.dist(x, z, v.x, v.z);
       if (d < radius * 1.2) G.vehicles.damage(v, dmg * (1 - d / (radius * 1.2)), source);
+    }
+    const hl = G.police.heli;
+    if (hl && hl.active && hl.dead <= 0) {
+      const dh = Math.hypot(hl.x - x, hl.y - y, hl.z - z);
+      if (dh < radius * 1.4) G.police.damageHeli(dmg * (1 - dh / (radius * 1.4)));
     }
     const dp = G.dist(x, z, G.player.x, G.player.z);
     if (dp < radius) G.player.damage(dmg * 0.7 * (1 - dp / radius));

@@ -323,6 +323,26 @@ G.player = {
     if (this.aiming) this.a = G.dampAngle(this.a, this.camYaw, 16, dt);
     else if (moving) this.a = G.dampAngle(this.a, Math.atan2(this.moveVX, this.moveVZ), 12, dt);
 
+    /* natacao: fora da orla o jogador boia e nada devagar */
+    this.swimming = G.inWater(this.x, this.z);
+    if (this.swimming) {
+      this.speed = G.damp(this.speed, moving ? 3.2 : 0, 6, dt);
+      this.x += this.moveVX * this.speed * dt;
+      this.z += this.moveVZ * this.speed * dt;
+      this.y = G.damp(this.y, -0.62, 6, dt);
+      this.vy = 0; this.grounded = false;
+      if (moving) this.a = G.dampAngle(this.a, Math.atan2(this.moveVX, this.moveVZ), 8, dt);
+      this.swimT = (this.swimT || 0) + dt;
+      /* cansaco: longe demais da praia comeca a afogar */
+      const deep = this.z - G.CITY.WATER_Z;
+      if (deep > 130) this.damage(9 * dt);
+      this.ch.root.position.set(this.x, this.y, this.z);
+      this.ch.root.rotation.y = this.a;
+      G.poseChar(this.ch, 'swim', dt, { speed: this.speed, t: this.swimT });
+      if (G.chance(dt * 4)) G.FX.spawn(this.x + G.rnd(-.5, .5), 0.1, this.z + G.rnd(-.5, .5), 0xbfe0ef, 0.5, 0.4, 0, 0.6, 0, true);
+      return;
+    }
+
     /* pulo */
     const gh = G.groundHeight(this.x, this.z);
     if (input.jump && this.grounded) { this.vy = 6.2; this.grounded = false; input.jump = false; }
@@ -405,6 +425,20 @@ G.player = {
     const px = v.x, pz = v.z;
     v.x += v.vx * dt;
     v.z += v.vz * dt;
+
+    /* caiu no mar: o carro afunda e o motorista sai nadando */
+    if (G.inWater(v.x, v.z)) {
+      v.sink = (v.sink || 0) + dt;
+      v.speed *= 0.85; v.vx *= 0.85; v.vz *= 0.85;
+      v.mesh.position.y = -v.sink * 1.2;
+      if (v.sink < dt * 2) G.toast('O veiculo esta afundando!');
+      if (v.sink > 1.2) {
+        this.exitCar(true);
+        v.wreck = true; v.active = false; v.mesh.visible = false;
+        this.z = G.CITY.WATER_Z - 2;
+        return;
+      }
+    }
 
     /* colisao com o cenario */
     let crashed = 0;

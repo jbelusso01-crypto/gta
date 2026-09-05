@@ -79,6 +79,26 @@ G.Audio = {
     this.siren.g.gain.setTargetAtTime(G.clamp(v, 0, 1) * 0.05, this.ctx.currentTime, 0.15);
   },
 
+  /* ------------------------------------------------------- helicoptero */
+  _buildHeli() {
+    const c = this.ctx;
+    const src = c.createBufferSource(); src.buffer = this.noise; src.loop = true;
+    const f = c.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 260; f.Q.value = 4;
+    const g = c.createGain(); g.gain.value = 0;
+    const chop = c.createGain(); chop.gain.value = 1;
+    const lfo = c.createOscillator(); lfo.type = 'sawtooth'; lfo.frequency.value = 13;
+    const lg = c.createGain(); lg.gain.value = 0.85;
+    lfo.connect(lg); lg.connect(chop.gain);
+    src.connect(f); f.connect(chop); chop.connect(g); g.connect(this.master);
+    src.start(); lfo.start();
+    this.heli = { g };
+  },
+  heliLevel(v) {
+    if (!this.ready) return;
+    if (!this.heli) this._buildHeli();
+    this.heli.g.gain.setTargetAtTime(G.clamp(v, 0, 1) * 0.11, this.ctx.currentTime, 0.2);
+  },
+
   /* ---------------------------------------------------------- ambiente */
   _buildAmbient() {
     const c = this.ctx;

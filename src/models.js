@@ -176,6 +176,20 @@ G.poseChar = function (ch, state, dt, opts) {
     L(ch.chest, 0.1, 0.25, 0, 6); L(ch.head, 0.25, -0.35, 0, 6);
     return;
   }
+  if (state === 'swim') {
+    const t = opts.t || a.t;
+    ch.root.rotation.x = G.damp(ch.root.rotation.x, -1.35, 8, dt);
+    ch.body.position.y = G.damp(ch.body.position.y, 0.15, 8, dt);
+    ch.armL.g.rotation.x = -1.7 + Math.sin(t * 5) * 1.5;
+    ch.armR.g.rotation.x = -1.7 + Math.sin(t * 5 + Math.PI) * 1.5;
+    L(ch.armL.fore, -0.3, 0, 0, 10); L(ch.armR.fore, -0.3, 0, 0, 10);
+    ch.legL.g.rotation.x = Math.sin(t * 6) * 0.45;
+    ch.legR.g.rotation.x = -Math.sin(t * 6) * 0.45;
+    L(ch.legL.shinG, 0.2, 0, 0, 8); L(ch.legR.shinG, 0.2, 0, 0, 8);
+    L(ch.chest, 0.2, 0, 0, 8); L(ch.head, 0.7, 0, 0, 8);
+    return;
+  }
+
   ch.root.rotation.x = G.damp(ch.root.rotation.x, 0, 10, dt);
 
   if (state === 'drive') {
@@ -437,5 +451,50 @@ G.makePickup = function (type) {
     const s = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.22, 0.1, 6), m);
     s.rotation.x = Math.PI / 2; g.add(s);
   }
+  return g;
+};
+
+/* ======================================================================== */
+/*                            HELICOPTERO                                    */
+/* ======================================================================== */
+G.makeHelicopter = function () {
+  const g = new THREE.Group();
+  const bodyMat = new THREE.MeshPhongMaterial({ vertexColors: true, shininess: 60 });
+  const glass = new THREE.MeshPhongMaterial({ color: 0x16202a, shininess: 110, specular: 0x99bbdd, transparent: true, opacity: 0.75 });
+  const parts = [
+    G.paint(G.extrudeProfile([[-2.2, 0.4], [-2.4, 1.6], [-0.6, 2.2], [1.6, 2.0], [2.6, 1.0], [2.4, 0.4]], 2.0), 0x1b3f7a),
+    cbox(0.9, 0.7, 4.6, 0, 1.5, -4.2, 0x1b3f7a),          /* cauda */
+    cbox(2.4, 0.16, 0.7, 0, 1.9, -6.2, 0xf0f0f0),         /* estabilizador */
+    cbox(0.22, 0.22, 1.4, 0, 2.55, 0.2, 0x2a2a2e),        /* mastro */
+    cbox(0.3, 0.5, 0.3, -1.05, 0.15, 0.6, 0x8a9099),      /* patins */
+    cbox(0.3, 0.5, 0.3, 1.05, 0.15, 0.6, 0x8a9099),
+    cbox(0.3, 0.5, 0.3, -1.05, 0.15, -1.4, 0x8a9099),
+    cbox(0.3, 0.5, 0.3, 1.05, 0.15, -1.4, 0x8a9099),
+    cbox(2.6, 0.16, 0.22, 0, -0.12, 0.6, 0x8a9099),
+    cbox(2.6, 0.16, 0.22, 0, -0.12, -1.4, 0x8a9099),
+    cbox(2.1, 0.5, 0.1, 0, 1.0, 2.5, 0xf0f0f0)            /* faixa */
+  ];
+  const body = new THREE.Mesh(G.mergeGeos(parts), bodyMat);
+  body.castShadow = true;
+  g.add(body);
+  const cab = new THREE.Mesh(G.extrudeProfile([[0.9, 1.2], [2.5, 1.05], [2.3, 2.0], [1.0, 2.15]], 1.9), glass);
+  g.add(cab);
+  /* rotor principal e de cauda */
+  const rotor = new THREE.Group();
+  rotor.position.set(0, 3.0, 0.2);
+  const blade = new THREE.Mesh(new THREE.BoxGeometry(15, 0.09, 0.65), new THREE.MeshLambertMaterial({ color: 0x24272b }));
+  const blade2 = blade.clone(); blade2.rotation.y = Math.PI / 2;
+  rotor.add(blade, blade2);
+  g.add(rotor);
+  const tail = new THREE.Group();
+  tail.position.set(0.5, 1.9, -6.3);
+  const tb = new THREE.Mesh(new THREE.BoxGeometry(0.12, 2.6, 0.35), new THREE.MeshLambertMaterial({ color: 0x24272b }));
+  const tb2 = tb.clone(); tb2.rotation.x = Math.PI / 2;
+  tail.add(tb, tb2);
+  g.add(tail);
+  const beacon = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.2, 0.28), new THREE.MeshBasicMaterial({ color: 0xff2222 }));
+  beacon.position.set(0, 0.3, -1.0);
+  g.add(beacon);
+  g.userData = { rotor, tail, beacon };
   return g;
 };

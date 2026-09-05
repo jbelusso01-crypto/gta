@@ -15,6 +15,8 @@ G.CITY = {
 };
 G.CITY.EXT = G.CITY.N * G.CITY.P + G.CITY.RW / 2;
 G.CITY.BLOCK = G.CITY.P - G.CITY.RW;      /* 92 */
+G.CITY.WATER_Z = G.CITY.EXT + 95;         /* linha d'agua ao sul */
+G.PIER = { x1: -187, x2: -173, z1: G.CITY.EXT + 8, z2: G.CITY.EXT + 238, y: 1.6 };
 
 G.blocks = [];      /* metadados de cada quadra  */
 G.zones = [];       /* nomes de bairro para o HUD */
@@ -584,6 +586,9 @@ function buildLandmarks(rng, put, collide, scene) {
 /* Altura do chao: calcada levantada ou asfalto. */
 G.groundHeight = function (x, z) {
   const C = G.CITY;
+  const P = G.PIER;
+  if (x > P.x1 && x < P.x2 && z > P.z1 && z < P.z2) return P.y;
+  if (z > C.WATER_Z) return -0.9;          /* dentro do mar */
   const bi = Math.floor(x / C.P), bj = Math.floor(z / C.P);
   if (bi < -C.N || bi >= C.N || bj < -C.N || bj >= C.N) return 0;
   const cx = (bi + 0.5) * C.P, cz = (bj + 0.5) * C.P;
@@ -610,6 +615,11 @@ G.zoneName = function (x, z) {
   return best;
 };
 /* posicao aleatoria valida sobre a rua */
+G.inWater = function (x, z) {
+  const P = G.PIER;
+  if (x > P.x1 && x < P.x2 && z > P.z1 && z < P.z2) return false;
+  return z > G.CITY.WATER_Z;
+};
 G.randomRoadPoint = function () {
   const C = G.CITY;
   const i = G.rndi(-C.N, C.N), j = G.rndi(-C.N, C.N - 1);
