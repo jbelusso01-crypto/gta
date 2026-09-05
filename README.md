@@ -8,6 +8,14 @@ navegador. Sem servidor, sem CDN, sem instalacao: e so abrir o `index.html`.
 Abra o arquivo `index.html` com um duplo clique (Chrome, Edge ou Firefox).
 Clique na tela para travar o mouse e comecar.
 
+Se quiser **um unico arquivo** (igual a versao antiga), use
+`dist/cidade-aberta.html`: e o jogo inteiro embutido, three.js incluso.
+Para regerar depois de mexer no codigo:
+
+```bash
+node build.js
+```
+
 Se preferir servir por HTTP (opcional, nao e necessario):
 
 ```bash
@@ -101,4 +109,5 @@ src/police.js       nivel de procurado
 src/missions.js     trabalhos
 src/hud.js          HUD, radar, mapa e lojas
 src/game.js         loop principal, entrada e save
+build.js            gera dist/cidade-aberta.html (tudo em um arquivo so)
 ```
