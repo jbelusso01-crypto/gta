@@ -169,9 +169,11 @@ G.poseChar = function (ch, state, dt, opts) {
   if (state === 'down') {
     ch.root.rotation.x = G.damp(ch.root.rotation.x, -Math.PI / 2 * 0.92, 8, dt);
     ch.body.position.y = G.damp(ch.body.position.y, 0.35, 8, dt);
-    L(ch.armL.g, 0.4, 0, -1.1, 6); L(ch.armR.g, 0.2, 0, 1.3, 6);
-    L(ch.legL.g, 0.25, 0, 0.2, 6); L(ch.legR.g, -0.1, 0, -0.3, 6);
-    L(ch.armL.fore, -0.3, 0, 0, 6); L(ch.armR.fore, -0.5, 0, 0, 6);
+    L(ch.armL.g, 0.15, 0, -0.45, 6); L(ch.armR.g, -0.2, 0, 0.62, 6);
+    L(ch.legL.g, 0.18, 0, 0.16, 6); L(ch.legR.g, -0.32, 0, -0.12, 6);
+    L(ch.armL.fore, -0.85, 0, 0, 6); L(ch.armR.fore, -1.15, 0, 0, 6);
+    L(ch.legR.shinG, 0.75, 0, 0, 6); L(ch.legL.shinG, 0.2, 0, 0, 6);
+    L(ch.chest, 0.1, 0.25, 0, 6); L(ch.head, 0.25, -0.35, 0, 6);
     return;
   }
   ch.root.rotation.x = G.damp(ch.root.rotation.x, 0, 10, dt);

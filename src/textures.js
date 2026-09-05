@@ -132,9 +132,9 @@ function grass() {
 /* ------------------------------------------------------------------ areia */
 function sand() {
   const s = 256, c = cv(s, s), x = c.getContext('2d');
-  x.fillStyle = '#c9b789'; x.fillRect(0, 0, s, s);
-  splotches(x, s, s, 90, '#bda87a', 8, 28, 0.45);
-  splotches(x, s, s, 60, '#d6c79b', 6, 20, 0.4);
+  x.fillStyle = '#b6a374'; x.fillRect(0, 0, s, s);
+  splotches(x, s, s, 90, '#a89468', 8, 28, 0.45);
+  splotches(x, s, s, 60, '#c6b489', 6, 20, 0.4);
   grain(x, s, s, 26);
   return c;
 }
@@ -143,7 +143,7 @@ function sand() {
 function water() {
   const s = 256, c = cv(s, s), x = c.getContext('2d');
   const g = x.createLinearGradient(0, 0, 0, s);
-  g.addColorStop(0, '#1c5f86'); g.addColorStop(1, '#14496b');
+  g.addColorStop(0, '#15597f'); g.addColorStop(1, '#0d3c5e');
   x.fillStyle = g; x.fillRect(0, 0, s, s);
   x.strokeStyle = 'rgba(255,255,255,.13)';
   for (let i = 0; i < 90; i++) {

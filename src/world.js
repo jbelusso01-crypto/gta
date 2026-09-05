@@ -138,8 +138,8 @@ G.world = {
     this.scene.background = hz.clone().lerp(skyTint, 0.35);
     if (!this.scene.fog) this.scene.fog = new THREE.Fog(hz.getHex(), 180, 620);
     this.scene.fog.color.copy(hz).lerp(skyTint, 0.4);
-    this.scene.fog.near = this.night ? 90 : 200;
-    this.scene.fog.far = this.night ? 400 : 700;
+    this.scene.fog.near = this.night ? 90 : 260;
+    this.scene.fog.far = this.night ? 430 : 980;
 
     /* janelas acesas + postes */
     const lit = G.clamp((0.12 - elev) * 2.2, 0, 1);
@@ -148,6 +148,18 @@ G.world = {
       G.oceanMesh.material.map.offset.y = (G.oceanMesh.material.map.offset.y + dt * 0.02) % 1;
       G.oceanMesh.material.map.offset.x = Math.sin(performance.now() / 4000) * 0.02;
     }
+    /* esconde os chunks da cidade que ficaram alem da neblina */
+    const cull = (this.scene.fog ? this.scene.fog.far : 980) + 120;
+    const ms = G.staticMeshes;
+    if (ms) {
+      for (let i = 0; i < ms.length; i++) {
+        const m = ms[i], u = m.userData;
+        if (u.always) continue;
+        const dx = u.center.x - px, dz = u.center.z - pz;
+        m.visible = Math.sqrt(dx * dx + dz * dz) - u.radius < cull;
+      }
+    }
+
     /* pulsa os marcadores */
     const k = 0.22 + Math.sin(performance.now() / 400) * 0.07;
     for (const s of this.services) {

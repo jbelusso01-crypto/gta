@@ -239,9 +239,9 @@ G.hud = {
     const C = G.CITY, view = R / scale + C.P;
     /* mar ao sul da cidade */
     g.fillStyle = '#1b4f72';
-    g.fillRect(-C.EXT * 2, C.EXT + 110, C.EXT * 4, C.EXT * 2);
-    g.fillStyle = '#c9b789';
-    g.fillRect(-C.EXT * 2, C.EXT - 60, C.EXT * 4, 170);
+    g.fillRect(-C.EXT * 2, C.EXT + 95, C.EXT * 4, C.EXT * 2);
+    g.fillStyle = '#b6a374';
+    g.fillRect(-C.EXT * 2, C.EXT - 60, C.EXT * 4, 155);
     /* quadras */
     for (const b of G.blocks) {
       if (Math.abs(b.x - p.x) > view || Math.abs(b.z - p.z) > view) continue;
@@ -322,7 +322,7 @@ G.hud = {
         c.fillRect(b.x - C.BLOCK / 2, b.z - C.BLOCK / 2, C.BLOCK, C.BLOCK);
       }
       c.fillStyle = '#1c5f86';
-      c.fillRect(-world / 2, C.EXT + 90, world, world);
+      c.fillRect(-world / 2, C.EXT + 95, world, world);
       c.strokeStyle = '#b0b0b8'; c.lineWidth = C.RW * 0.8;
       for (let i = -C.N; i <= C.N; i++) {
         c.beginPath(); c.moveTo(-C.EXT, i * C.P); c.lineTo(C.EXT, i * C.P); c.stroke();

@@ -302,7 +302,6 @@ G.vehicles = {
       v.speed = 0;
       v.mode = 'parked';
       v.siren = true;
-      setTimeout(() => { if (v.active) v.active = v.active; }, 1);
     }
     /* colisao com o jogador de carro: empurra */
     if (G.player.inCar && d < 5.2) {

@@ -61,21 +61,32 @@ G.buildCity = function (scene) {
   const rng = G.makeRng(20260905);
   G.grid = new G.SpatialGrid(48);
 
-  const bucket = {};   /* geometrias agrupadas por material */
-  const put = (key, geo) => { (bucket[key] || (bucket[key] = [])).push(geo); };
+  /* Geometrias agrupadas por material E por chunk de 4x4 quadras. Sem os
+     chunks a cidade inteira viraria um unico mesh gigante que nunca sai do
+     frustum, e a GPU processaria os 2 km de predios a cada quadro.        */
+  const CHUNK = C.P * 5;
+  const bucket = {};
+  const _bb = new THREE.Box3();
+  const put = (key, geo) => {
+    geo.computeBoundingBox();
+    const b = geo.boundingBox;
+    const cx = (b.min.x + b.max.x) / 2, cz = (b.min.z + b.max.z) / 2;
+    const k = key + '|' + Math.floor(cx / CHUNK) + ',' + Math.floor(cz / CHUNK);
+    (bucket[k] || (bucket[k] = [])).push(geo);
+  };
   const collide = (x, z, w, d) => G.grid.insert({ x1: x - w / 2, x2: x + w / 2, z1: z - d / 2, z2: z + d / 2 });
 
   /* ---------------------------------------------------------- chao base */
   {
     const S = C.EXT * 2 + 900;
-    const g = G.floorQuad(0, -140, S, S, -0.05, 12);
+    const g = G.floorQuad(0, -140, S, S, -0.55, 12);
     put('ground', g);
   }
 
   /* ------------------------------------------------------------- oceano */
-  const OCEAN_Z = C.EXT + 210;
+  const OCEAN_Z = C.EXT + 95;   /* linha d'agua */
   {
-    const g = G.floorQuad(0, OCEAN_Z + 600, 4200, 1400, -0.6, 40);
+    const g = G.floorQuad(0, OCEAN_Z + 700, 4200, 1400, -0.12, 40);
     put('water', g);
   }
 
@@ -136,13 +147,20 @@ G.buildCity = function (scene) {
   /* --------------------------------------------------- monta os meshes */
   const meshes = [];
   const add = (key, mat, cast, recv) => {
-    if (!bucket[key] || !bucket[key].length) return;
-    const geo = G.mergeGeos(bucket[key]);
-    const m = new THREE.Mesh(geo, mat);
-    m.castShadow = !!cast; m.receiveShadow = recv !== false;
-    m.matrixAutoUpdate = false;
-    scene.add(m); meshes.push(m);
-    return m;
+    let last = null;
+    for (const k of Object.keys(bucket)) {
+      if (k.split('|')[0] !== key) continue;
+      const geo = G.mergeGeos(bucket[k]);
+      const m = new THREE.Mesh(geo, mat);
+      m.castShadow = !!cast; m.receiveShadow = recv !== false;
+      m.matrixAutoUpdate = false;
+      geo.computeBoundingSphere();
+      m.userData.center = geo.boundingSphere.center.clone();
+      m.userData.radius = geo.boundingSphere.radius;
+      scene.add(m); meshes.push(m);
+      last = m;
+    }
+    return last;
   };
   add('ground', new THREE.MeshLambertMaterial({ map: T.grass, color: 0x8a9878 }), false, true);
   G.oceanMesh = add('water', new THREE.MeshPhongMaterial({ map: T.water, shininess: 90, specular: 0x88bbdd }), false, true);
@@ -173,6 +191,8 @@ G.buildCity = function (scene) {
     add('wall_' + st, mat, true, true);
   }
   G.staticMeshes = meshes;
+  /* meshes muito grandes (chao, mar) nunca somem */
+  for (const m of meshes) m.userData.always = m.userData.radius > 700;
 
   /* --------------------------------------------------------- nomes de zona */
   const used = {};
@@ -184,7 +204,7 @@ G.buildCity = function (scene) {
       used[n] = 1;
     }
   }
-  G.zones.push({ x: 0, z: OCEAN_Z, name: 'Oceano' });
+  G.zones.push({ x: 0, z: OCEAN_Z + 420, name: 'Oceano' });
 };
 
 /* ----------------------------------------------------------- por distrito */
@@ -471,6 +491,16 @@ function streetProps(blk, rng, put, collide, y0) {
     if (rng.chance(0.2)) { /* hidrante */
       put('plain', G.paint(G.boxGeo(0.35, 0.8, 0.35, 1).translate(x + sx * 0.8, y0 + 0.4, z - sz * 2.2), 0xc0392b));
     }
+    if (rng.chance(0.45)) { /* semaforo virado para a rua */
+      const tx = x + sx * 1.2, tz = z + sz * 1.2;
+      put('metal', G.paint(new THREE.CylinderGeometry(0.11, 0.14, 4.2, 6).translate(tx, y0 + 2.1, tz), 0x33383d));
+      put('metal', G.paint(G.boxGeo(0.42, 1.15, 0.34, 1).translate(tx, y0 + 4.3, tz), 0x2b2f33));
+      const cols = [0xd63b2f, 0xe8b53a, 0x35b04a];
+      for (let c = 0; c < 3; c++) {
+        put('glowSign', G.paint(G.boxGeo(0.2, 0.2, 0.06, 1)
+          .translate(tx - sx * 0.2, y0 + 4.66 - c * 0.32, tz - sz * 0.2), cols[c]));
+      }
+    }
   }
   /* ponto de onibus */
   if (rng.chance(0.18)) {
@@ -505,23 +535,23 @@ function buildBeachBlock(blk, rng, put, collide) {
 function buildBeach(rng, put, collide, OCEAN_Z) {
   const C = G.CITY;
   /* faixa de areia entre a ultima quadra e o mar */
-  const z0 = C.EXT + 10;
-  put('sand', G.floorQuad(0, z0 + 100, C.EXT * 2 + 200, 200, 0.02, 12));
+  const z0 = C.EXT + 8;
+  put('sand', G.floorQuad(0, z0 + 45, C.EXT * 2 + 200, 92, 0.02, 12));
   /* pier */
   const px = -180;
-  put('bark', G.paint(G.boxGeo(14, 0.4, 200, 4).translate(px, 1.2, z0 + 100), 0xb08a5a));
-  for (let z = z0; z < z0 + 200; z += 12) {
+  put('bark', G.paint(G.boxGeo(14, 0.4, 230, 4).translate(px, 1.2, z0 + 115), 0x9c7a4c));
+  for (let z = z0; z < z0 + 230; z += 12) {
     for (const sx of [-6, 6]) {
       put('bark', G.paint(new THREE.CylinderGeometry(0.4, 0.4, 3, 6).translate(px + sx, 0, z), 0x7a5a34));
     }
   }
-  for (let z = z0 + 6; z < z0 + 200; z += 24) {
+  for (let z = z0 + 6; z < z0 + 230; z += 24) {
     for (const sx of [-6.8, 6.8]) {
       put('metal', G.paint(new THREE.CylinderGeometry(0.09, 0.09, 1.2, 5).translate(px + sx, 2.0, z), 0xdddddd));
     }
   }
-  for (let k = 0; k < 24; k++) {
-    palm(rng.range(-C.EXT, C.EXT), rng.range(z0 + 8, z0 + 70), rng, put, collide, 0.02);
+  for (let k = 0; k < 30; k++) {
+    palm(rng.range(-C.EXT, C.EXT), rng.range(z0 + 4, z0 + 40), rng, put, collide, 0.02);
   }
 }
 
